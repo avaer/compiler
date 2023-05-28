@@ -42,6 +42,7 @@ import zineskybox from '../types/zine/zineskybox.js';
 import zinestory from '../types/zine/zinestory.js';
 import item from '../types/item.js';
 import portal from '../types/portal.js';
+import blockadelabsskybox from '../types/blockadelabsskybox.js';
 
 // import upath from 'unix-path';
 import {getCwd, readFile} from '../util.js';
@@ -88,6 +89,7 @@ const loaders = {
   zinestory,
   item,
   portal,
+  blockadelabsskybox,
   '': directory,
 };
 
@@ -104,7 +106,7 @@ const _getType = id => {
     }
     let extension;
     let match2;
-    if (match2 = type.match(/^application\/(light|text|rendersettings|spawnpoint|lore|quest|npc|mob|react|group|wind|item|portal|zine|zineskybox|zinestory)$/)) {
+    if (match2 = type.match(/^application\/(light|text|rendersettings|spawnpoint|lore|quest|npc|mob|react|group|wind|item|portal|blockadelabsskybox|zine|zineskybox|zinestory)$/)) {
       extension = match2[1];
     } else if (match2 = type.match(/^application\/(javascript)$/)) {
       extension = 'js';
