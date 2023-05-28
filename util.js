@@ -106,7 +106,7 @@ export const parseIdHash = id => {
   let description = '';
   let components = [];
 
-  const match = id.match(/#([\s\S]+)$/);
+  const match = !id.startsWith('data:') ? id.match(/#([\s\S]+)$/) : null;
   if (match) {
     const q = new URLSearchParams(match[1]);
     const qContentId = q.get('contentId');
@@ -127,7 +127,7 @@ export const parseIdHash = id => {
     }
   }
   if (!contentId) {
-    contentId = id.match(/^([^#]*)/)[1];
+    contentId = id;
   }
   if (!name) {
     if (/^data:/.test(contentId)) {
