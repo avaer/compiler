@@ -62,7 +62,8 @@ export default ctx => {
     usePhysicsTracker,
     // useFloorManager,
     useSpawnManager,
-    useClients,
+    // useClients,
+    useCleanup,
   } = ctx;
 
   const app = useApp();
@@ -70,11 +71,11 @@ export default ctx => {
   const physicsTracker = usePhysicsTracker();
   // const floorManager = useFloorManager();
   const spawnManager = useSpawnManager();
-  const {
-    blockadelabs: {
-      loadSkyboxImageSpecs,
-    },
-  } = useClients();
+  // const {
+  //   blockadelabs: {
+  //     loadSkyboxImageSpecs,
+  //   },
+  // } = useClients();
 
   const srcUrl = ${this.srcUrl};
   
@@ -85,13 +86,21 @@ export default ctx => {
     // console.log('blockade labs skybox json', json);
 
     // load the skybox
+    // const {
+    //   file_url,
+    //   depth_map_url,
+    // } = await loadSkyboxImageSpecs(json);
     const {
-      file_url,
-      depth_map_url,
-    } = await loadSkyboxImageSpecs(json);
+      fileUrl,
+      depthMapUrl,
+    } = json;
+    // console.log('got urls', {
+    //   fileUrl,
+    //   depthMapUrl,
+    // });
 
     const imgBlob = await (async () => {
-      const res = await fetch(file_url);
+      const res = await fetch(fileUrl);
       const blob = await res.blob();
       return blob;
     })();
@@ -144,13 +153,13 @@ export default ctx => {
       };
     })(); */
 
-    // read depth_map_url
+    // read depth map
     const {
       width,
       height,
       arrayBuffer,
     } = await (async () => {
-      const res = await fetch(depth_map_url);
+      const res = await fetch(depthMapUrl);
       const blob = await res.blob();
       const imageBitmap = await createImageBitmap(blob);
       const {width, height} = imageBitmap;
@@ -274,6 +283,13 @@ export default ctx => {
         physics.setTransform(scenePhysicsObject, false);
       };
       physicsTracker.addAppPhysicsObject(app, scenePhysicsObject);
+
+      // console.log('add physics object', scenePhysicsObject);
+      useCleanup(() => {
+        // console.log('remove physics object', scenePhysicsObject, new Error().stack);
+        physics.removeGeometry(scenePhysicsObject);
+        physicsTracker.removeAppPhysicsObject(app, scenePhysicsObject);
+      });
       
       // start off as not selected
       // physics.disableActor(scenePhysicsObject);
