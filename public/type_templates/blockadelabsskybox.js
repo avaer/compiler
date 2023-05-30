@@ -410,6 +410,8 @@ export default ctx => {
     );
     await spawnManager.spawn();
   })());
+
+  return app;
 };
 export const contentId = ${this.contentId};
 export const name = ${this.name};
