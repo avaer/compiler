@@ -15,10 +15,10 @@ export default {
       components,
     } = parseIdHash(id);
 
-    console.log('parse id', {
-      id,
-      contentId,
-    });
+    // console.log('parse id', {
+    //   id,
+    //   contentId,
+    // });
 
     const code = fillTemplate(templateString, {
       srcUrl: JSON.stringify(id),
