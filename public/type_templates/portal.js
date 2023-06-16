@@ -392,6 +392,7 @@ export default ctx => {
     const camera = useCamera();
 
     const portalScene = new THREE.Scene();
+    portalScene.name = 'portalScene';
     portalScene.autoUpdate = false;
 
     portalScene.add(appManager);
