@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+// import * as THREE from 'three';
 
 // const q180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 
@@ -24,7 +24,7 @@ export default ctx => {
     // useCleanup,
     // useCamera,
     // usePhysics,
-    useExport,
+    // useExport,
     useLoaders,
     useAvatarManager,
     // useTempManager,
@@ -179,7 +179,7 @@ export default ctx => {
     physicsIds.length = 0;
   }); */
 
-  useExport(async (opts) => {
+  /* useExport(async (opts) => {
     // console.log('use export', JSON.stringify(opts));
     const {mimeType} = opts;
     if (mimeType === 'image/png+icon') {
@@ -200,7 +200,7 @@ export default ctx => {
     } else {
       return null;
     }
-  });
+  }); */
 
   return app;
 };
