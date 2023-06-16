@@ -331,7 +331,6 @@ export default ctx => {
     const res = await fetch(srcUrl);
     const json = await res.json();
 
-
     console.log('portal json', json);
     const {
       portalContents = [
@@ -350,6 +349,7 @@ export default ctx => {
         start_url,
         type,
         content,
+        components,
       } = portalContents[i];
 
       // const portalContentApp = new App();
@@ -363,7 +363,7 @@ export default ctx => {
           // position,
           // quaternion,
           // scale,
-          // components,
+          components,
         });
         portalContentsApps.push(portalContentsApp);
         // console.log('loaded portal content app', {start_url}, portalContentsApp);
