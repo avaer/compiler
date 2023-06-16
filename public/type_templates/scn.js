@@ -128,11 +128,25 @@ export default ctx => {
   
   let live = true;
   ctx.waitUntil((async () => {
-    console.log('loading scn', srcUrl);
+    // console.log('loading scn', srcUrl);
     const res = await fetch(srcUrl);
     const j = await res.json();
     const {objects} = j;
-    const buckets = {};
+
+    if (live) {
+      for (const object of objects) {
+        let {position = [0, 0, 0], quaternion = [0, 0, 0, 1], scale = [1, 1, 1], components = []} = object;
+        position = new THREE.Vector3().fromArray(position);
+        quaternion = new THREE.Quaternion().fromArray(quaternion);
+        scale = new THREE.Vector3().fromArray(scale);
+        
+        const baseUrl = import.meta.url;
+        const url = importManager.getObjectUrl(object, baseUrl);
+        await loadApp(url, position, quaternion, scale, components);
+      }
+    }
+
+    /* const buckets = {};
 
     for (const object of objects) {
       const lp = object.loadPriority ?? 0;
@@ -143,7 +157,6 @@ export default ctx => {
       }
       a.push(object);
     }
-
     const sKeys = Object.keys(buckets).sort((a, b) => a - b);
     
     for (let i=0; i<sKeys.length; i++) {
@@ -156,13 +169,11 @@ export default ctx => {
           scale = new THREE.Vector3().fromArray(scale);
           
           const baseUrl = import.meta.url;
-          console.log('baseUrl', baseUrl);
           const url = importManager.getObjectUrl(object, baseUrl);
-          console.log('url', url)
           await loadApp(url, position, quaternion, scale, components);
         }
       }));
-    }
+    } */
 
     console.log('scene loaded:', srcUrl);
   })());
@@ -171,7 +182,7 @@ export default ctx => {
     live = false;
   });
 
-  app.hasSubApps = true;
+  // app.hasSubApps = true;
 
   return true;
 };
