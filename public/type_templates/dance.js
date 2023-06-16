@@ -13,6 +13,8 @@ export default ctx => {
     useRealmManager,
     useAudioManager,
     useLoaders,
+    useCleanup,
+    useAvatar,
   } = ctx;
 
   const app = useApp();
@@ -23,6 +25,7 @@ export default ctx => {
     gltfLoader,
     fbxLoader,
   } = loaders;
+  const Avatar = useAvatar();
 
   const srcUrl = ${this.srcUrl};
 
@@ -33,7 +36,7 @@ export default ctx => {
     const res = await fetch(srcUrl);
     const json = await res.json();
 
-    console.log('got dance', json);
+    // console.log('got dance', json);
 
     const {
       avatarUrl,
@@ -74,56 +77,59 @@ export default ctx => {
     const audioBufferSourceNode = audioContext.createBufferSource();
     audioBufferSourceNode.buffer = audioBuffer;
 
-    // start animating
+    // load the animation
     const animateVrmFbx = makeFbxAnimator({
       fbxSrc,
       skeleton,
       modelBones,
     });
 
-    // if the audio context is suspended wait for audio context to start
-    if (audioContext.state !== 'running') {
-      const click = () => {
-        audioContext.resume();
-        console.log('resumed audio context');
-
-        cleanup();
-      };
-      window.addEventListener('click', click);
-
-      const cleanup = () => {
-        window.removeEventListener('click', click);
-      };
-
-      await new Promise((accept, reject) => {
-        const statechange = () => {
-          audioContext.removeEventListener('statechange', statechange);
-          accept();
+    (async () => {
+      // if the audio context is suspended wait for audio context to start
+      if (audioContext.state !== 'running') {
+        const click = () => {
+          audioContext.resume();
+          console.log('resumed audio context');
 
           cleanup();
         };
-        audioContext.addEventListener('statechange', statechange);
+        window.addEventListener('click', click);
 
         const cleanup = () => {
-          audioContext.removeEventListener('statechange', statechange);
+          window.removeEventListener('click', click);
         };
-      });
+        useCleanup(cleanup);
 
-      cleanup();
-    }
+        await new Promise((accept, reject) => {
+          const statechange = () => {
+            audioContext.removeEventListener('statechange', statechange);
+            accept();
 
-    audioBufferSourceNode.connect(audioContext.destination);
-    audioBufferSourceNode.start();
+            cleanup();
+          };
+          audioContext.addEventListener('statechange', statechange);
 
-    const recurse = () => {
-      frame = requestAnimationFrame(recurse);
+          const cleanup = () => {
+            audioContext.removeEventListener('statechange', statechange);
+          };
+        });
 
-      const t = audioContext.currentTime;
-      animateVrmFbx(t);
+        cleanup();
+      }
 
-      modelBones.Root.updateMatrixWorld();
-    };
-    let frame = requestAnimationFrame(recurse);
+      audioBufferSourceNode.connect(audioContext.destination);
+      audioBufferSourceNode.start();
+
+      const recurse = () => {
+        frame = requestAnimationFrame(recurse);
+
+        const t = audioContext.currentTime;
+        animateVrmFbx(t);
+
+        modelBones.Root.updateMatrixWorld();
+      };
+      let frame = requestAnimationFrame(recurse);
+    })();
   })());
 
   return app;
