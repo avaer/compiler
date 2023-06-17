@@ -15,6 +15,7 @@ export default ctx => {
     useLoaders,
     useCleanup,
     useAvatar,
+    useDanceManager,
   } = ctx;
 
   const app = useApp();
@@ -26,6 +27,7 @@ export default ctx => {
     fbxLoader,
   } = loaders;
   const Avatar = useAvatar();
+  const danceManager = useDanceManager();
 
   const srcUrl = ${this.srcUrl};
 
@@ -36,7 +38,7 @@ export default ctx => {
     const res = await fetch(srcUrl);
     const json = await res.json();
 
-    // console.log('got dance', json);
+    console.log('got dance', json);
 
     const {
       avatarUrl,
@@ -78,7 +80,7 @@ export default ctx => {
     audioBufferSourceNode.buffer = audioBuffer;
 
     // load the animation
-    const animateVrmFbx = makeFbxAnimator({
+    const animateVrmFbx = danceManager.makeFbxAnimator({
       fbxSrc,
       skeleton,
       modelBones,
