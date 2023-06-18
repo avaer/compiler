@@ -44,6 +44,7 @@ import item from '../types/item.js';
 import portal from '../types/portal.js';
 import blockadelabsskybox from '../types/blockadelabsskybox.js';
 import dance from '../types/dance.js';
+import loreitem from '../types/loreitem.js';
 
 // import upath from 'unix-path';
 import {getCwd, readFile} from '../util.js';
@@ -92,6 +93,7 @@ const loaders = {
   portal,
   blockadelabsskybox,
   dance,
+  loreitem,
   '': directory,
 };
 
@@ -108,7 +110,7 @@ const _getType = id => {
     }
     let extension;
     let match2;
-    if (match2 = type.match(/^application\/(scn|light|text|rendersettings|spawnpoint|lore|quest|npc|mob|react|group|wind|item|portal|blockadelabsskybox|dance|zine|zineskybox|zinestory)$/)) {
+    if (match2 = type.match(/^application\/(scn|light|text|rendersettings|spawnpoint|lore|quest|npc|mob|react|group|wind|item|portal|blockadelabsskybox|dance|zine|zineskybox|zinestory|loreitem)$/)) {
       extension = match2[1];
     } else if (match2 = type.match(/^application\/(javascript)$/)) {
       extension = 'js';
