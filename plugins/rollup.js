@@ -336,7 +336,8 @@ export default function metaversefilePlugin() {
         // source = source.replace(/\.data$/, '');
         source = 'data:' + match[1] +
           (match[2] ? (';' + match[2]) : '') +
-          ';base64,' + btoa(decodeURIComponent(match[3]));
+          // ';base64,' + btoa(s);
+          ',' + match[3];
       }
 
       // console.log('rollup resolve id', {source, importer});
