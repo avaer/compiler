@@ -280,6 +280,8 @@ export class PortalMesh extends THREE.Mesh {
       // console.log('dispose portal', this.portalSceneRenderTarget.width, this.portalSceneRenderTarget.height);
       this.portalSceneRenderTarget.dispose();
       this.portalSceneRenderTarget = null;
+
+      this.portalCamera.aspect = size.x / size.y;
     }
 
     if (!this.portalSceneRenderTarget) {
