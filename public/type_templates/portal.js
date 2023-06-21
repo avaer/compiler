@@ -318,12 +318,18 @@ export default ctx => {
     useApp,
     useRenderer,
     useCamera,
-    createAppManager,
+    // createAppManager,
+    useCameraManager,
     useLocalPlayer,
     useCleanup,
+    useFrame,
+    useRealmManager,
   } = ctx;
 
   const app = useApp();
+  const cameraManager = useCameraManager();
+  const realmManager = useRealmManager();
+  const rootRealm = realmManager.getRootRealm();
 
   const srcUrl = ${this.srcUrl};
   
@@ -331,18 +337,38 @@ export default ctx => {
     const res = await fetch(srcUrl);
     const json = await res.json();
 
-    console.log('portal json', json);
-    const {
-      portalContents = [
-        {
-          start_url: '/models/skybox.glb',
-        },
-      ],
-    } = json;
+    const portalScene = new THREE.Scene();
+    portalScene.name = 'portalScene';
+    portalScene.autoUpdate = false;
+    app.portalScene = portalScene;
+
+    // const {
+    //   portalContents = [
+    //     {
+    //       start_url: '/models/skybox.glb',
+    //     },
+    //   ],
+    // } = json;
+    // const {
+    //   portalContents = [],
+    // } = json;
+    // const portalContentsApps = portalContents.map(instanceId => {
+    //   const app = rootRealm.appManager.getAppByInstanceId(instanceId);      
+    //   if (!app) {
+    //     console.log('no such app', apps, instanceId);
+    //     debugger;
+    //   }      
+    //   return app;
+    // });
+    // for (const contentApp of portalContentsApps) {
+    //   portalScene.add(contentApp);
+    // }
+    // console.log('got portal contents', portalContents, portalContentsApps, rootRealm);
+    // debugger;
 
     //
 
-    const appManager = createAppManager();
+    /* const appManager = createAppManager();
     let portalContentsApps = [];
     for (let i = 0; i < portalContents.length; i++) {
       const {
@@ -368,44 +394,40 @@ export default ctx => {
         portalContentsApps.push(portalContentsApp);
         // console.log('loaded portal content app', {start_url}, portalContentsApp);
       })();
+    } */
 
-      app.swapApps = (otherApps, otherAppManager) => {
-        const oldPortalContentsApps = portalContentsApps.slice();
+    // app.swapApps = (otherApps, otherAppManager) => {
+    //   /* const oldPortalContentsApps = portalContentsApps.slice();
 
-        for (let i = 0; i < portalContentsApps.length; i++) {
-          appManager.transplantApp(portalContentsApps[i], otherAppManager);
-        }
-        portalContentsApps.length = 0;
+    //   for (let i = 0; i < portalContentsApps.length; i++) {
+    //     appManager.transplantApp(portalContentsApps[i], otherAppManager);
+    //   }
+    //   portalContentsApps.length = 0;
 
-        for (let i = 0; i < otherApps.length; i++) {
-          const otherApp = otherApps[i];
-          otherAppManager.transplantApp(otherApp, appManager);
-          portalContentsApps.push(otherApp);
-        }
-        return oldPortalContentsApps;
-      };
-    }
+    //   for (let i = 0; i < otherApps.length; i++) {
+    //     const otherApp = otherApps[i];
+    //     otherAppManager.transplantApp(otherApp, appManager);
+    //     portalContentsApps.push(otherApp);
+    //   }
+    //   return oldPortalContentsApps; */
+    // };
 
     //
 
     const renderer = useRenderer();
     const camera = useCamera();
 
-    const portalScene = new THREE.Scene();
-    portalScene.name = 'portalScene';
-    portalScene.autoUpdate = false;
-
-    portalScene.add(appManager);
-    appManager.updateMatrixWorld();
+    // portalScene.add(appManager);
+    // appManager.updateMatrixWorld();
 
     // const size = 2;
 
     // const portalCamera = camera.clone();
     const portalCamera = camera.clone();
     const portalMesh = new PortalMesh({
-        renderer,
-        portalScene,
-        portalCamera,
+      renderer,
+      portalScene,
+      portalCamera,
     });
     app.add(portalMesh);
     portalMesh.updateMatrixWorld();
@@ -421,8 +443,8 @@ export default ctx => {
     // }
 
     // render loop
-    const _recurse = () => {
-      frame = requestAnimationFrame(_recurse);
+    const update = () => {
+      // frame = requestAnimationFrame(_recurse);
 
       const xrCamera = renderer.xr.getSession() ? renderer.xr.getCamera(camera) : camera;
       // console.log('got camera position', camera.position.toArray(), xrCamera.position.toArray());
@@ -433,11 +455,19 @@ export default ctx => {
       const now = performance.now();
       portalMesh.update(now);
     };
-    let frame = requestAnimationFrame(_recurse);
-
+    // let frame = requestAnimationFrame(_recurse);
+    // useFrame(recurse, {
+    //   offset: -1,
+    // });
+    cameraManager.addEventListener('update', update);
+    
     useCleanup(() => {
-      cancelAnimationFrame(frame);
+      cameraManager.removeEventListener('update', update);
     });
+
+    // useCleanup(() => {
+    //   cancelAnimationFrame(frame);
+    // });
 
     // await worldZine.addWorldZine(app, json);
 
