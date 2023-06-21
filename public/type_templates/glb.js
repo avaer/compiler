@@ -40,7 +40,7 @@ export default ctx => {
     useFrame,
     useActivate,
     useCleanup,
-    useExport,
+    // useExport,
     useLoaders,
     usePhysics,
     usePhysicsTracker,
@@ -379,7 +379,7 @@ export default ctx => {
     _unwear();
   });
 
-  useExport(async ({mimeType, args}) => {
+  /* useExport(async ({mimeType, args}) => {
     console.log('got mime type', JSON.stringify(mimeType), JSON.stringify(args));
 
     const width = 512;
@@ -577,7 +577,7 @@ export default ctx => {
     } else {
       return null;
     }
-  });
+  }); */
 
   app.stop = () => {
     for (const mixer of animationMixers) {
