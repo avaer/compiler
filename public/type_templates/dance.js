@@ -38,8 +38,6 @@ export default ctx => {
     const res = await fetch(srcUrl);
     const json = await res.json();
 
-    console.log('got dance', json);
-
     const {
       avatarUrl,
       audioUrl,
