@@ -282,6 +282,7 @@ export class PortalMesh extends THREE.Mesh {
       this.portalSceneRenderTarget = null;
 
       this.portalCamera.aspect = size.x / size.y;
+      this.portalCamera.updateProjectionMatrix();
     }
 
     if (!this.portalSceneRenderTarget) {
