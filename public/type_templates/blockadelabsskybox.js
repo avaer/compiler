@@ -4,9 +4,6 @@ import * as THREE from 'three';
 
 const localVector = new THREE.Vector3();
 const localVector2D = new THREE.Vector2();
-// const localMatrix = new THREE.Matrix4();
-
-// const downQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
 
 //
 
@@ -61,14 +58,17 @@ export default ctx => {
     usePhysics,
     usePhysicsTracker,
     // useFloorManager,
-    useSpawnManager,
+    // useSpawnManager,
     // useClients,
     useCleanup,
+    useRealmManager,
   } = ctx;
 
   const app = useApp();
   const physics = usePhysics();
   const physicsTracker = usePhysicsTracker();
+  const realmManager = useRealmManager();
+  const rootRealm = realmManager.getRootRealm();
   // const floorManager = useFloorManager();
   // const spawnManager = useSpawnManager();
   // const {
@@ -81,46 +81,46 @@ export default ctx => {
   
   ctx.waitUntil((async () => {
     const res = await fetch(srcUrl);
-    // console.log('blockade labs skybox res', {srcUrl});
     const json = await res.json();
-    // console.log('blockade labs skybox json', json);
 
-    // load the skybox
-    // const {
-    //   file_url,
-    //   depth_map_url,
-    // } = await loadSkyboxImageSpecs(json);
     const {
+      id,
       fileUrl,
       depthMapUrl,
     } = json;
     // console.log('got urls', {
+    //   id,
     //   fileUrl,
     //   depthMapUrl,
     // });
+
+    app.worldIdentityId = id;
 
     const imgBlob = await (async () => {
       const res = await fetch(fileUrl);
       const blob = await res.blob();
       return blob;
     })();
-    const img = await new Promise((accept, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        cleanup();
-        accept(img);
-      };
-      img.onerror = err => {
-        cleanup();
-        reject(err);
-      };
-      const u = URL.createObjectURL(imgBlob);
-      const cleanup = () => {
-        URL.revokeObjectURL(u);
-      };
-      img.crossOrigin = 'Anonymous';
-      img.src = u;
+    const img = await createImageBitmap(imgBlob, {
+      imageOrientation: 'flipY',
     });
+    // const img = await new Promise((accept, reject) => {
+    //   const img = new Image();
+    //   img.onload = () => {
+    //     cleanup();
+    //     accept(img);
+    //   };
+    //   img.onerror = err => {
+    //     cleanup();
+    //     reject(err);
+    //   };
+    //   const u = URL.createObjectURL(imgBlob);
+    //   const cleanup = () => {
+    //     URL.revokeObjectURL(u);
+    //   };
+    //   img.crossOrigin = 'Anonymous';
+    //   img.src = u;
+    // });
     const imgTexture = new THREE.Texture(img);
     imgTexture.needsUpdate = true;
 
@@ -207,13 +207,13 @@ export default ctx => {
         let y = positions[i * 3 + 1];
         let z = positions[i * 3 + 2];
 
-        // quantize
+        /* // quantize
         const quantum = 0.01;
         if (Math.abs(y) > (1 - quantum)) {
           if (Math.abs(x) < quantum) x = 0;
           if (Math.abs(z) < quantum) z = 0;
           // y = Math.round(y / quantum) * quantum;
-        }
+        } */
 
         const key = `${x},${y},${z}`;
         if (positionToOriginalIndexMap.has(key)) {
@@ -258,10 +258,39 @@ export default ctx => {
       indices[i * 3 + 1] = b;
       indices[i * 3 + 2] = a;
     }
-    const sphereMaterial = new THREE.MeshBasicMaterial({
-      // color: 0xFFFFFF,
-      map: imgTexture,
-      // side: THREE.BackSide,
+    // const sphereMaterial = new THREE.MeshBasicMaterial({
+    //   // color: 0xFFFFFF,
+    //   map: imgTexture,
+    //   // side: THREE.BackSide,
+    // });
+    const sphereMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        map: {
+          value: imgTexture,
+          needsUpdate: true,
+        },
+        dynamicDepth: {
+          value: 1,
+          needsUpdate: true,
+        },
+      },
+      vertexShader: `\
+        varying vec2 vUv;
+        uniform float dynamicDepth;
+        void main() {
+          vUv = uv;
+          // set the position of the current vertex
+          vec3 p = mix(normalize(position) * 20., position * dynamicDepth, dynamicDepth);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        }
+      `,
+      fragmentShader: `\
+        uniform sampler2D map;
+        varying vec2 vUv;
+        void main() {
+          gl_FragColor = texture2D(map, vUv);
+        }
+      `,
     });
     const octahedronMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
     // this.scene.add(octahedronMesh);
@@ -273,24 +302,52 @@ export default ctx => {
     {
       let scenePhysicsObject = null;
 
-      const scenePhysicsMesh = new THREE.Mesh(octahedronMesh.geometry, octahedronMesh.material);
-
       const enablePhysics = () => {
+        const scenePhysicsMesh = new THREE.Mesh(
+          octahedronMesh.geometry.clone()
+            .applyMatrix4(app.matrixWorld),
+          octahedronMesh.material
+        );
+        // scenePhysicsMesh.position.copy(app.position);
+        // scenePhysicsMesh.quaternion.copy(app.quaternion);
+        // scenePhysicsMesh.scale.copy(app.scale);
+        // app.matrixWorld.decompose(
+        //   scenePhysicsMesh.position,
+        //   scenePhysicsMesh.quaternion,
+        //   scenePhysicsMesh.scale
+        // );
+        // scenePhysicsMesh.updateMatrixWorld();
+        // scenePhysicsMesh.matrix.copy(app.matrix);
+        // scenePhysicsMesh.matrixWorld.copy(app.matrixWorld);
+
         scenePhysicsObject = physics.addGeometry(scenePhysicsMesh);
-        scenePhysicsObject.update = () => {
-          scenePhysicsMesh.matrixWorld.decompose(
-            scenePhysicsObject.position,
-            scenePhysicsObject.quaternion,
-            scenePhysicsObject.scale
-          );
-          physics.setTransform(scenePhysicsObject, false);
-        };
+        // scenePhysicsObject.update = () => {
+        //   throw new Error('should not be here');
+        //   scenePhysicsMesh.matrixWorld.decompose(
+        //     scenePhysicsObject.position,
+        //     scenePhysicsObject.quaternion,
+        //     scenePhysicsObject.scale
+        //   );
+        //   physics.setTransform(scenePhysicsObject, false);
+        // };
         physicsTracker.addAppPhysicsObject(app, scenePhysicsObject);
 
-        console.log('enable physics', scenePhysicsObject);
+        // rootRealm.add(
+        //   scenePhysicsObject.physicsMesh
+        // );
+        // scenePhysicsObject.physicsMesh.updateMatrixWorld();
+        // scenePhysicsObject.physicsMesh.visible = true;
+
+        // scenePhysicsObject.physicsMesh.onBeforeRender = () => {
+        //   console.log('render');
+        // };
+
+        // console.log('add physics mesh', rootRealm, scenePhysicsObject.physicsMesh);
+
+        // console.log('enable physics', scenePhysicsObject);
       };
       const disablePhysics = () => {
-        console.log('disable physics', scenePhysicsObject);
+        // console.log('disable physics', scenePhysicsObject);
         physics.removeGeometry(scenePhysicsObject);
         physicsTracker.removeAppPhysicsObject(app, scenePhysicsObject);
         scenePhysicsObject = null;
@@ -304,12 +361,15 @@ export default ctx => {
         const {
           keys,
         } = e;
-        console.log('componentsupdate', keys);
+        // console.log('componentsupdate', keys);
         if (keys.includes('physics')) {
           const physicsEnabled = getPhysicsEnabled();
+          // console.log('check physics enabled', physicsEnabled, app);
           if (physicsEnabled && !scenePhysicsObject) {
+            // console.log('enable physics', app);
             enablePhysics();
           } else if (!physicsEnabled && scenePhysicsObject) {
+            // console.log('disable physics', app);
             disablePhysics();
           }
         }
