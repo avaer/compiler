@@ -21,6 +21,7 @@ export class PortalMesh extends THREE.Mesh {
     renderer,
     portalScene,
     portalCamera,
+    doubleSideEnabled,
   }) {
     const portalWorldSize = 4;
     
@@ -242,7 +243,7 @@ export class PortalMesh extends THREE.Mesh {
         }
       `,
       transparent: true,
-      side: THREE.DoubleSide,
+      side: doubleSideEnabled ? THREE.DoubleSide : THREE.FrontSide,
     });
 
     super(geometry, material);
@@ -333,6 +334,8 @@ export default ctx => {
   const cameraManager = useCameraManager();
   const realmManager = useRealmManager();
   const rootRealm = realmManager.getRootRealm();
+
+  const doubleSideEnabled = app.getComponent('doubleSideEnabled');
 
   const srcUrl = ${this.srcUrl};
   
@@ -431,6 +434,7 @@ export default ctx => {
       renderer,
       portalScene,
       portalCamera,
+      doubleSideEnabled,
     });
     app.add(portalMesh);
     portalMesh.updateMatrixWorld();
