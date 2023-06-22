@@ -6,12 +6,12 @@ export default ctx => {
   const {
     useApp,
     useNpcManager,
-    useHitManager,
+    // useHitManager,
     useCleanup,
   } = ctx;
   const app = useApp();
   const npcManager = useNpcManager();
-  const hitManager = useHitManager();
+  // const hitManager = useHitManager();
 
   const srcUrl = ${this.srcUrl};
 
@@ -23,6 +23,7 @@ export default ctx => {
     if (!live) return;
 
     app.npc = npc;
+
     // npc.app = app;
     cleanupFns.push(() => {
       npcManager.removeNpcApp(app);
