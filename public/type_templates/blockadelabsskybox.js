@@ -96,102 +96,66 @@ export default ctx => {
 
     app.worldIdentityId = id;
 
-    const imgBlob = await (async () => {
-      const res = await fetch(fileUrl);
-      const blob = await res.blob();
-      return blob;
-    })();
-    const img = await createImageBitmap(imgBlob, {
-      imageOrientation: 'flipY',
-    });
-    // const img = await new Promise((accept, reject) => {
-    //   const img = new Image();
-    //   img.onload = () => {
-    //     cleanup();
-    //     accept(img);
-    //   };
-    //   img.onerror = err => {
-    //     cleanup();
-    //     reject(err);
-    //   };
-    //   const u = URL.createObjectURL(imgBlob);
-    //   const cleanup = () => {
-    //     URL.revokeObjectURL(u);
-    //   };
-    //   img.crossOrigin = 'Anonymous';
-    //   img.src = u;
-    // });
+    // read depth map
+    const [
+      img,
+      {
+        width,
+        height,
+        arrayBuffer,
+      },
+    ] = await Promise.all([
+      (async () => {
+        const imgBlob = await (async () => {
+          const res = await fetch(fileUrl);
+          const blob = await res.blob();
+          return blob;
+        })();
+        const img = await createImageBitmap(imgBlob, {
+          imageOrientation: 'flipY',
+        });
+        return img;
+      })(),
+      (async () => {
+        const res = await fetch(depthMapUrl);
+        const blob = await res.blob();
+        const imageBitmap = await createImageBitmap(blob);
+        const {width, height} = imageBitmap;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(imageBitmap, 0, 0);
+
+        // read the depth from grey scale
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const {data} = imageData;
+        const arrayBuffer = new ArrayBuffer(width * height * Float32Array.BYTES_PER_ELEMENT);
+        const float32Array = new Float32Array(arrayBuffer);
+        const depthFactor = 10;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i + 0];
+          // const g = data[i + 1];
+          // const b = data[i + 2];
+          // const a = data[i + 3];
+          let rawDepth = r / 255;
+          const j = i / 4;
+          float32Array[j] = rawDepth * depthFactor;
+        }
+
+        return {
+          width,
+          height,
+          arrayBuffer,
+        };
+      })(),
+    ]);
+
     const imgTexture = new THREE.Texture(img);
+    // imgTexture.encoding = THREE.sRGBEncoding;
     imgTexture.needsUpdate = true;
 
-    /* const {
-      width,
-      height,
-      arrayBuffer,
-    } = await (async () => {
-      const depthWidth = 1024;
-      const img2 = resizeImage(img, depthWidth);
-      const img2Blob = await new Promise((accept, reject) => {
-        img2.toBlob(accept, 'image/jpeg');
-      });
-
-      console.log('worldzine fetch depth 1', img2Blob.size, imgUrl);
-      const res2 = await fetch('https://local.webaverse.com/zoeDepth', {
-        method: 'POST',
-        body: img2Blob,
-      });
-      console.log('worldzine fetch depth 2', imgUrl);
-      const width = parseInt(res2.headers.get('X-Width'), 10);
-      const height = parseInt(res2.headers.get('X-Height'), 10);
-      const arrayBuffer = await res2.arrayBuffer();
-      console.log('worldzine fetch depth 3', arrayBuffer.byteLength, width, height, imgUrl);
-
-      return {
-        width,
-        height,
-        arrayBuffer,
-      };
-    })(); */
-
-    // read depth map
-    const {
-      width,
-      height,
-      arrayBuffer,
-    } = await (async () => {
-      const res = await fetch(depthMapUrl);
-      const blob = await res.blob();
-      const imageBitmap = await createImageBitmap(blob);
-      const {width, height} = imageBitmap;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(imageBitmap, 0, 0);
-
-      // read the depth from grey scale
-      const imageData = ctx.getImageData(0, 0, width, height);
-      const {data} = imageData;
-      const arrayBuffer = new ArrayBuffer(width * height * Float32Array.BYTES_PER_ELEMENT);
-      const float32Array = new Float32Array(arrayBuffer);
-      const depthFactor = 10;
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i + 0];
-        // const g = data[i + 1];
-        // const b = data[i + 2];
-        // const a = data[i + 3];
-        let rawDepth = r / 255;
-        const j = i / 4;
-        float32Array[j] = rawDepth * depthFactor;
-      }
-
-      return {
-        width,
-        height,
-        arrayBuffer,
-      };
-    })();
     let float32Array = new Float32Array(arrayBuffer);
     
     const sphereGeometry = new THREE.SphereBufferGeometry(1, 64, 32);
