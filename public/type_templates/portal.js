@@ -293,7 +293,7 @@ export class PortalMesh extends THREE.Mesh {
         format: THREE.RGBAFormat,
         stencilBuffer: false,
       });
-      portalSceneRenderTarget.texture.encoding = THREE.sRGBEncoding;
+      portalSceneRenderTarget.texture.encoding = this.renderer.outputEncoding;
       this.material.uniforms.iChannel1.value = portalSceneRenderTarget.texture;
       this.material.uniforms.iChannel1.needsUpdate = true;
 
